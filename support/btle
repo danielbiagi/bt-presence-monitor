@@ -41,6 +41,7 @@ btle_scanner () {
 			(>&2 log "${GREEN}[CMD-INFO]${NC}	cycling bluetooth hardware on $PREF_HCI_DEVICE. please wait a moment...")
 
 			#POWER CYCLE
+			command -v rfkill >/dev/null 2>&1 && rfkill unblock bluetooth 2>/dev/null
 			hciconfig $PREF_HCI_DEVICE down
 			sleep 5 
 			hciconfig $PREF_HCI_DEVICE up

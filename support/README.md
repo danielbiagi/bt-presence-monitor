@@ -172,14 +172,18 @@ sudo systemctl restart mosquitto
 3. In `mqtt_preferences`, ensure `mqtt_address` is set to `localhost` or `127.0.0.1` (if running Mosquitto on the same Pi) and that username/password match if authentication is used.
 </details>
 
-<details><summary><b> Debian 12 (Bookworm): command not found for hcitool / hciconfig / hcidump?</b></summary><p><p>
+<details><summary><b> Debian 12 (Bookworm): which packages provide hcitool, hciconfig, and hcidump?</b></summary><p><p>
 
-Upstream BlueZ deprecated legacy tools (`hcitool`, `hciconfig`, `hcidump`). In Debian 12 Bookworm, these tools were moved out of the primary package and into `bluez-deprecated`.
+On Debian 12 Bookworm and Raspberry Pi OS Bookworm Lite, all required utilities are available in the official APT repositories:
+- `bluez` provides `hciconfig`, `hcitool`, and `btmon`.
+- `bluez-hcidump` provides `hcidump`.
+- `pi-bluetooth` provides firmware setup and the `hciuart` service for Raspberry Pi onboard Bluetooth.
+- `bc` is used for precision calculations.
 
-Install them via:
+To install all required packages at once:
 ```bash
 sudo apt update
-sudo apt install -y bluez-deprecated
+sudo apt install -y bluez bluez-hcidump pi-bluetooth bc rfkill
 ```
 </details>
 

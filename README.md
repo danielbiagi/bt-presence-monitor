@@ -48,14 +48,16 @@ sudo apt update
 sudo apt upgrade -y
 ```
 
-3. Install Bluetooth drivers and tools:
+3. Install Bluetooth drivers and required packages:
+All required packages are available directly from the standard Raspberry Pi OS / Debian repositories:
 ```bash
-# Install Bluetooth packages
-sudo apt install -y pi-bluetooth bluez
-
-# On Debian 12 (Bookworm) and newer: install deprecated BlueZ tools (hcitool, hciconfig, hcidump)
-sudo apt install -y bluez-deprecated
+sudo apt install -y bluez bluez-hcidump pi-bluetooth bc rfkill git
 ```
+- `bluez` provides `hcitool`, `hciconfig`, and `btmon`.
+- `bluez-hcidump` provides `hcidump`.
+- `pi-bluetooth` configures the onboard Bluetooth chip (BCM43438 on Pi Zero W).
+- `bc` is used for precision calculations.
+- `rfkill` manages wireless radio state.
 
 4. Ensure Bluetooth is unblocked:
 On modern Raspberry Pi OS builds, Bluetooth may be soft-blocked by `rfkill` upon first boot. Unblock and start services:

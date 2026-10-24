@@ -93,6 +93,7 @@ trap "clean" EXIT
 # ----------------------------------------------------------------------------------------
 
 #CYCLE BLUETOOTH INTERFACE 
+command -v rfkill >/dev/null 2>&1 && rfkill unblock bluetooth 2>/dev/null
 hciconfig "$PREF_HCI_DEVICE" down && sleep 3 && hciconfig "$PREF_HCI_DEVICE" up
 
 #STOP OTHER INSTANCES OF MONITOR WITHOUT STOPPING THIS ONE
