@@ -39,11 +39,20 @@ should_exit=false
 #BINARY CHECKS
 [ -z "$mosquitto_pub_path" ] && printf "%s\n" ">${RED} error:${NC} required package 'mosquitto_pub' not found. please install 'mosquitto' and 'mosquitto-clients'." && should_exit=true
 [ -z "$mosquitto_sub_path" ] && printf "%s\n" ">${RED} error:${NC} required package 'mosquitto_sub' not found. please install 'mosquitto' and 'mosquitto-clients'." && should_exit=true
-[ -z "$btmon_path" ] && printf "%s\n" ">${RED} error:${NC} required package 'btmon' not found. please install 'btmon'." && should_exit=true
-[ -z "$hcidump_path" ] && printf "%s\n" ">${RED} error:${NC} required package 'hcidump' not found. please install 'bluez-hcidump' (e.g., sudo apt-get install bluez-hcidump)." && should_exit=true
-[ -z "$bc_path" ] && printf "%s\n" ">${RED} error:${NC} required package 'bc' not found. please install 'bc' (e.g., apt-get install bc)" && should_exit=true
+[ -z "$btmon_path" ] && printf "%s\n" ">${RED} error:${NC} required command 'btmon' not found. please install 'bluez' (e.g., sudo apt install bluez)." && should_exit=true
+[ -z "$hcidump_path" ] && printf "%s\n" ">${RED} error:${NC} required package 'hcidump' not found. please install 'bluez-hcidump' (e.g., sudo apt install bluez-hcidump)." && should_exit=true
+[ -z "$bc_path" ] && printf "%s\n" ">${RED} error:${NC} required package 'bc' not found. please install 'bc' (e.g., sudo apt install bc)." && should_exit=true
 [ -z "$git_path" ] && printf "%s\n" "${ORANGE}> warning:${NC} Recommended package 'git' not found. please consider installing for regular updates."
 [ ! -f /.dockerenv  ] && [ ! -z "$(which systemctl)" ] && [ ! -e "$service_path" ] && printf "%s\n" "${ORANGE}> warning:${NC} monitor.service not installed. Install service? (y/n)" && read should_install
+
+#UNBLOCK RFKILL IF SOFT BLOCKED
+if command -v rfkill >/dev/null 2>&1; then
+	if rfkill list bluetooth 2>/dev/null | grep -qi "soft blocked: yes"; then
+		printf "%s\n" "${GREEN}> info:${NC} bluetooth is soft-blocked by rfkill, unblocking..."
+		rfkill unblock bluetooth 2>/dev/null
+		sleep 1
+	fi
+fi
 
 #BASH VERSION 4.4+
 [[ ! ${BASH_VERSION//[^0-9.]/} =~ ^(4.[4-9]{1,}.?|^[5-9].?) ]] && printf "%s\n" ">${ORANGE} warning:${NC} recommended minimum bash version 4.4+ not found. please consider updating."

@@ -128,6 +128,65 @@ ___
 If more than one program or executable try to use the Bluetooth hardware at the same time, your Bluetooth hardware will report an error. To correct this error, the hardware needs to be taken offline, then brought back. 
 </details>
 
+<details><summary><b> Can't init device hci0: Operation not possible due to RF-kill (132)?</b></summary><p><p>
+
+On modern Raspberry Pi OS releases (Bullseye / Bookworm), the Linux kernel's `rfkill` subsystem often soft-blocks the Bluetooth radio upon boot. When this happens, `hciconfig hci0 up` fails and `monitor` enters an infinite hardware cycle.
+
+To check and unblock:
+```bash
+# Check if Bluetooth is soft-blocked
+rfkill list
+
+# Unblock Bluetooth
+sudo rfkill unblock bluetooth
+
+# Ensure Bluetooth and UART services are running
+sudo systemctl enable --now bluetooth
+sudo systemctl enable --now hciuart
+
+# Power on the adapter
+sudo bluetoothctl power on
+```
+
+Also verify that `/boot/firmware/config.txt` (or `/boot/config.txt` on older releases) does not contain `dtoverlay=disable-bt`.
+</details>
+
+<details><summary><b> [CMD-MQTT] warning: mqtt broker refused connection / Mosquitto Error: Address already in use?</b></summary><p><p>
+
+If running `mosquitto -v` reports `Error: Address already in use`, Mosquitto is already running in the background as a systemd service.
+
+However, Mosquitto 2.0+ (the default on newer Debian/Raspberry Pi OS releases) introduces two breaking defaults:
+1. It binds strictly to loopback (`127.0.0.1`) unless a `listener` is explicitly defined.
+2. It rejects unauthenticated/anonymous connections unless `allow_anonymous true` is set.
+
+To allow local or network connections:
+1. Create `/etc/mosquitto/conf.d/local.conf`:
+```conf
+listener 1883
+allow_anonymous true
+```
+2. Restart the Mosquitto service:
+```bash
+sudo systemctl restart mosquitto
+```
+3. In `mqtt_preferences`, ensure `mqtt_address` is set to `localhost` or `127.0.0.1` (if running Mosquitto on the same Pi) and that username/password match if authentication is used.
+</details>
+
+<details><summary><b> Debian 12 (Bookworm): which packages provide hcitool, hciconfig, and hcidump?</b></summary><p><p>
+
+On Debian 12 Bookworm and Raspberry Pi OS Bookworm Lite, all required utilities are available in the official APT repositories:
+- `bluez` provides `hciconfig`, `hcitool`, and `btmon`.
+- `bluez-hcidump` provides `hcidump`.
+- `pi-bluetooth` provides firmware setup and the `hciuart` service for Raspberry Pi onboard Bluetooth.
+- `bc` is used for precision calculations.
+
+To install all required packages at once:
+```bash
+sudo apt update
+sudo apt install -y bluez bluez-hcidump pi-bluetooth bc rfkill
+```
+</details>
+
 <details><summary><b> How do I access logs?</b></summary><p><p> 
 
 Run via command line and post log output to github. Else, access `journalctl` to show the most recent logs: 

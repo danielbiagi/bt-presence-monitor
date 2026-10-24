@@ -17,82 +17,76 @@
 
 ## Setup of SD Card
 
-1. Download latest version of **raspbian** [here](https://downloads.raspberrypi.org/raspbian_lite_latest)
+1. Download **Raspberry Pi Imager** from [raspberrypi.com/software](https://www.raspberrypi.com/software/).
 
-2. Download etcher from [etcher.io](https://etcher.io)
+2. Insert your micro SD card into your computer and open Raspberry Pi Imager:
+   - **Device:** Select **Raspberry Pi Zero** (or your Pi model).
+   - **Operating System:** Select **Raspberry Pi OS (other)** &rarr; **Raspberry Pi OS Lite (32-bit)**. *(Note: The Pi Zero W uses an ARMv6 processor, so the 32-bit Lite image is required).*
+   - **Storage:** Select your SD card.
 
-3. Image **raspbian lite buster** to SD card. [Instructions here.](https://www.raspberrypi.org/magpi/pi-sd-etcher/)
+3. In the OS Customisation options (prompted by Imager or accessible via the settings cog):
+   - Set **Hostname** (e.g., `monitor-zero` or `bt-presence-detector`).
+   - Set **Username and Password** *(Raspberry Pi OS no longer includes a default `pi:raspberry` user for security reasons)*.
+   - Configure **Wi-Fi** with your SSID, password, and Wi-Fi country code.
+   - Under the **Services** tab, check **Enable SSH** (use password authentication or add your authorized public key).
 
-4. Mount **boot** partition of imaged SD card (unplug it and plug it back in)
+4. Write the image to the SD card.
 
-5. **To enable ssh,** create blank file, without any extension, in the root directory called **ssh**
-
-6. **To setup Wi-Fi**, create **wpa_supplicant.conf** file in root directory and add Wi-Fi details for home Wi-Fi:
-
-```bash
-country=US
-    ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-    update_config=1
-
-network={
-    ssid="Your Network Name"
-    psk="Your Network Password"
-    key_mgmt=WPA-PSK
-}
-```
-
- 7. **On the first startup,** insert SD card and power on Raspberry Pi Zero W. On first boot, the newly-created **wpa_supplicant.conf** file and **ssh** will be moved to appropriate directories. Find the IP address of the Pi via your router. 
+5. Insert the SD card into your Raspberry Pi Zero W and power it on. Allow 1-2 minutes for the initial boot and network connection.
 
 ## Configuration and Setup
 
-1. SSH into the Raspberry Pi (default password: raspberry):
+1. SSH into the Raspberry Pi:
 ```bash
-ssh pi@theipaddress
+ssh username@hostname.local
+# or ssh username@<ip-address>
 ```
 
-2. Change the default password:
-```bash 
-sudo passwd pi
-```
-
-3. Update and upgrade:
-
+2. Update packages:
 ```bash
-sudo apt-get update
-sudo apt-get upgrade -y
-sudo apt-get dist-upgrade -y
-sudo reboot
+sudo apt update
+sudo apt upgrade -y
 ```
 
-5. Install Bluetooth Firmware, if necessary:
+3. Install Bluetooth drivers and required packages:
+All required packages are available directly from the standard Raspberry Pi OS / Debian repositories:
 ```bash
-#install Bluetooth drivers for Pi Zero W
-sudo apt-get install pi-bluetooth
-
+sudo apt install -y bluez bluez-hcidump pi-bluetooth bc rfkill git
 ```
+- `bluez` provides `hcitool`, `hciconfig`, and `btmon`.
+- `bluez-hcidump` provides `hcidump`.
+- `pi-bluetooth` configures the onboard Bluetooth chip (BCM43438 on Pi Zero W).
+- `bc` is used for precision calculations.
+- `rfkill` manages wireless radio state.
+
+4. Ensure Bluetooth is unblocked:
+On modern Raspberry Pi OS builds, Bluetooth may be soft-blocked by `rfkill` upon first boot. Unblock and start services:
+```bash
+sudo rfkill unblock bluetooth
+sudo systemctl enable --now bluetooth
+sudo systemctl enable --now hciuart
+```
+
+5. Install Mosquitto (if running the MQTT broker locally on this device):
+Mosquitto is available directly in the official Debian / Raspberry Pi OS repositories:
+```bash
+sudo apt install -y mosquitto mosquitto-clients libmosquitto-dev
+```
+
+> **Important for Mosquitto 2.0+ (Debian Bullseye / Bookworm):**  
+> Mosquitto 2.0+ defaults to local-only connections and rejects unauthenticated connections. To allow connections, create `/etc/mosquitto/conf.d/local.conf`:
+> ```bash
+> sudo tee /etc/mosquitto/conf.d/local.conf <<EOF
+> listener 1883
+> allow_anonymous true
+> EOF
+> sudo systemctl restart mosquitto
+> ```
+> *(For production environments, consider configuring authenticated users instead of `allow_anonymous true`.)*
 
 6. Reboot:
 ```bash
 sudo reboot
-```
-
-7. Install Mosquitto 1.5+ **(important step!)**:
-```bash
-
-# get repo key
-wget http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key
-
-#add repo
-sudo apt-key add mosquitto-repo.gpg.key
-
-#download appropriate lists file 
-cd /etc/apt/sources.list.d/
-sudo wget http://repo.mosquitto.org/debian/mosquitto-buster.list
-
-#update caches and install 
-sudo apt-cache search mosquitto
-sudo apt-get update
-sudo apt-get install -f libmosquitto-dev mosquitto mosquitto-clients libmosquitto1
 ```
 </details>
 
